@@ -1,0 +1,292 @@
+<!-- Derive OpenGL Perspective Projection Matrix for Left Handed View Space Coordinates -->
+<html>
+<head>
+  <style>
+  img.diagram {
+    display: block;
+    padding: 25px;
+    max-width: 500px;
+    border-style: solid;
+    border-color: #000000;
+    border-width: 1px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 25px;
+    margin-bottom: 0px;
+  }
+  figcaption {
+    text-align: center;
+    font-size: 14px;
+  }
+  </style>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Derive Perspective Matrix
+  </title>
+
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default'></script>
+
+</head>
+
+<body>
+
+  <h1>Derivation of Perspective Projection Matrix</h1>
+  <p>For a perspective projection, we want to map the points inside the view space frustrum to OpenGL NDC (Normalized Device Coordinates) space</p>
+
+  <figure>
+  <img class="diagram" src="frustrum.jpg" alt="View Space Frustrum (Left Handed Coordinates)">
+  <figcaption>View Space Frustrum (Left Handed Coordinates)</figcaption>
+  </figure>
+
+  <p>The frustrum is defined by</p>
+  <b>z</b> in [<b>n</b>, <b>f</b>]<br>
+  <b>n</b> is the z coordinate of the near plane<br>
+  <b>f</b> is the z coordinate of the far plane<br>
+  <br>
+  For <b>z</b> == <b>n</b><br>
+  <b>x</b> in [<b>l</b>, <b>r</b>]<br>
+  <b>y</b> in [<b>b</b>, <b>t</b>]<br>
+  <p>Where for the near plane</p>
+  <b>l</b> is the x coordinate of the left bounds<br>
+  <b>r</b> is the x coordinate of the right bounds<br>
+  <b>b</b> is the y coordinate of the bottom bounds<br>
+  <b>t</b> is the y coordinate of the top bounds<br>
+
+  <figure>
+  <img class="diagram" src="ndc_space.jpg" alt="Open GL Normalized Device Coordinate Space">
+  <figcaption>Open GL Normalized Device Coordinate (NDC) Space</figcaption>
+  </figure>
+
+  <p>For NDC Space</p>
+  <b>x</b> in [-1.0, 1.0]<br>
+  <b>y</b> in [-1.0, 1.0]<br>
+  <b>z</b> in [-1.0, 1.0]<br>
+
+  <p>For OpenGL, a z coordinate of -1.0 appears in front of a z coordinate of 1.0</p>
+  <p>For example, if you had a triangle in the xy plane with a constant z of -0.5 it would appear in front of another triangle in the xy plane with a constant z of +0.5</p>
+  <p>The upper left of the view window corresponds to an xy coordinate of (-1.0, 1.0)</p>
+  <p>The lower right of the view window corresponds to an xy coordinate of (1.0, -1.0)</p>
+
+  <h2>x Coordinate Mapping</h2>
+  <p>Let's map the x coordinates from the frustrum's view space to NDC space</p>
+
+  <figure>
+  <img class="diagram" src="zx_plane_of_frustrum.jpg" alt="zx Plane of Frustrum">
+  <figcaption>zx Plane of Frustrum</figcaption>
+  </figure>
+
+  <b>x_near</b> means the x coordinate when <b>z</b> = <b>n</b><br>
+  <b>x_arb</b> means an arbitrary x coordinate within the frustrum's bounds<br>
+  <b>z_arb</b> means an arbitrary z coordinate within the frustrum's bounds<br>
+  <p>A right triangle is formed by the following three points: the origin at (x=0, z=0), (x=<b>x_near</b>, z=<b>n</b>), and (x=0, z=<b>n</b>)</p>
+  <p>Another right triangle is formed by the following three points: the origin at (x=0, z=0), (x=<b>x_arb</b>, z=<b>z_arb</b>), and (x=0, z=<b>z_arb</b>)</p>
+  <p>These are similar triangles</p>
+  <p>This means that the tan(&#x3b8;) is equal for both triangles</p>
+  $${tan(\theta) = {{opposite}\over {adjacent}} = {x_{near}\over n} = {x_{arb}\over z_{arb}}}$$
+  $${x_{near} = n\cdot{x_{arb}\over z_{arb}}}$$
+  Remember, for <b>z</b> == <b>n</b><br>
+  we want to map <b>x</b> in [<b>l</b>, <b>r</b>]<br>
+  <p>For z fixed at the near plane, our x coordinate from our graph of the zx slice of the frustrum is <b>x_near</b></p>
+  <p>We do a linear mapping for <b>x_near</b> between <b>l</b> and <b>r</b> using the point slope form of a line equation</p>
+  $${y - y_0 = m\cdot(x - x_0) = \left({y_1 - y_0}\over{x_1 - x_0}\right) \cdot (x - x_0)}$$
+  <p>where (x_0, y_0) is the first point of the line, (x_1, y_1) is the second point of the line, and m is the slope of the line</p>
+  <p>Our input to the linear mapping is x=<b>x_near</b>, and our output is the x coordinate in NDC space y=<b>x_ndc</b>, whose range is [-1.0, 1.0]</p>
+  <p>So our input range is [<b>l</b>, <b>r</b>], and the range of our output is [-1.0, 1.0]</p>
+  <p>Our first point is (x_0=<b>l</b>, y_0=-1.0), and our second point is (x_1=<b>r</b>, y_1=+1.0)</p>
+  <p>So we have</p>
+  $${x_{ndc} - (-1.0) = \left({1.0 - (-1.0)}\over{r - l}\right) \cdot (x - l) = \left(2\over{r - l}\right) \cdot \left(n\cdot{x_{arb}\over z_{arb}} - l\right) }$$
+  $${x_{ndc} + 1 = \left({2}\over{r - l}\right) \cdot \left({{n\cdot x_{arb}}\over z_{arb}} - l\right)}$$
+  $${x_{ndc} + 1 = {{2n}\over {r - l}} \cdot {x_{arb}\over z_{arb}} - {{2l}\over{r - l}}}$$
+  $${x_{ndc} = {{2n}\over {r - l}} \cdot {x_{arb}\over z_{arb}} - {{2l}\over{r - l}} - 1 }$$
+  $${x_{ndc} = {{2n}\over {r - l}} \cdot {x_{arb}\over z_{arb}} - {{2l}\over{r - l}} - {{r-l}\over{r-l}} }$$
+  $${x_{ndc} = {{2n}\over {r - l}} \cdot {x_{arb}\over z_{arb}} - {\left({{2l}\over{r - l}} + {{r-l}\over{r-l}}\right)} }$$
+  $${x_{ndc} = {\left({2n}\over {r - l}\right)} \cdot {x_{arb}\over z_{arb}} - {\left({{r + l}\over{r - l}}\right)} }$$
+
+  <h2>y Coordinate Mapping</h2>
+  <p>Now let's do a similar mapping for the y coordinates from the frustrum's view space to NDC space</p>
+
+  <figure>
+  <img class="diagram" src="zy_plane_of_frustrum.jpg" alt="zy Plane of Frustrum">
+  <figcaption>zy Plane of Frustrum</figcaption>
+  </figure>
+
+  <b>y_near</b> means the y coordinate when <b>z</b> = <b>n</b><br>
+  <b>y_arb</b> means an arbitrary y coordinate within the frustrum's bounds<br>
+  <b>z_arb</b> means an arbitrary z coordinate within the frustrum's bounds<br>
+  <p>A right triangle is formed by the following three points: the origin at (y=0, z=0), (y=<b>y_near</b>, z=<b>n</b>), and (y=0, z=<b>n</b>)</p>
+  <p>Another right triangle is formed by the following three points: the origin at (y=0, z=0), (y=<b>y_arb</b>, z=<b>z_arb</b>), and (y=0, z=<b>z_arb</b>)</p>
+  <p>These are similar triangles</p>
+  <p>This means that the tan(&#x3b8;) is equal for both triangles</p>
+  $${tan(\theta) = {{opposite}\over {adjacent}} = {y_{near}\over n} = {y_{arb}\over z_{arb}}}$$
+  $${y_{near} = n\cdot{y_{arb}\over z_{arb}}}$$
+  Remember, for <b>z</b> == <b>n</b><br>
+  we want to map <b>y</b> in [<b>b</b>, <b>t</b>]<br>
+  <p>For z fixed at the near plane, our y coordinate from our graph of the zy slice of the frustrum is <b>y_near</b></p>
+  <p>We do a linear mapping for <b>y_near</b> between <b>b</b> and <b>t</b> using the point slope form of a line equation</p>
+  $${y - y_0 = m\cdot(x - x_0) = \left({y_1 - y_0}\over{x_1 - x_0}\right) \cdot (x - x_0)}$$
+  <p>where (x_0, y_0) is the first point of the line, (x_1, y_1) is the second point of the line, and m is the slope of the line</p>
+  <p>Our input to the linear mapping is x=<b>y_near</b>, and our output is the y coordinate in NDC space y=<b>y_ndc</b>, whose range is [-1.0, 1.0]</p>
+  <p>So our input range is [<b>b</b>, <b>t</b>], and the range of our output is [-1.0, 1.0]</p>
+  <p>Our first point is (x_0=<b>b</b>, y_0=-1.0), and our second point is (x_1=<b>t</b>, y_1=+1.0)</p>
+  <p>So we have</p>
+  $${y_{ndc} - (-1.0) = \left({1.0 - (-1.0)}\over{t - b}\right) \cdot (y_{arb} - b) = \left(2\over{t - b}\right) \cdot \left(n\cdot{y_{arb}\over z_{arb}} - b\right) }$$
+  $${y_{ndc} + 1 = \left({2}\over{t - b}\right) \cdot \left({{n\cdot y_{arb}}\over z_{arb}} - b\right)}$$
+  $${y_{ndc} + 1 = {{2n}\over {t - b}} \cdot {y_{arb}\over z_{arb}} - {{2b}\over{t - b}}}$$
+  $${y_{ndc} = {{2n}\over {t - b}} \cdot {y_{arb}\over z_{arb}} - {{2b}\over{t - b}} - 1 }$$
+  $${y_{ndc} = {{2n}\over {t - b}} \cdot {y_{arb}\over z_{arb}} - {{2b}\over{t - b}} - {{t - b}\over{t - b}} }$$
+  $${y_{ndc} = {{2n}\over {t - b}} \cdot {y_{arb}\over z_{arb}} - {\left({{2b}\over{t - b}} + {{t - b}\over{t - b}}\right)} }$$
+  $${y_{ndc} = {\left({2n}\over {t - b}\right)} \cdot {y_{arb}\over z_{arb}} - {\left({{t + b}\over{t - b}}\right)} }$$
+
+  <h2>Partial fill out of projection matrix</h2>
+  <p>OpenGL uses 4 dimensional vectors with symbols x, y, z, and w.</p>
+  <p><b>x_arb</b>, <b>y_arb</b>, and <b>z_arb</b> are our 3d coordinates of our vertexes that we are doing a perspective projection on.  The <b>w_arb</b> coordinate of our vertexes we always set to 1.</p>
+  $${w_{arb} = 1}$$
+  <p>This 4d space is called "homogeneous space"</p>
+  <p>The result of the multiplication of our projection matrix by our vertex is a vertex in "clip space"</p>
+  $${
+    \begin{bmatrix}
+    m_{00} & m_{10} & m_{20} & m_{30}\\
+    m_{01} & m_{11} & m_{21} & m_{31}\\
+    m_{02} & m_{12} & m_{22} & m_{32}\\
+    m_{03} & m_{13} & m_{23} & m_{33}
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+    x_{arb}\\
+    y_{arb}\\
+    z_{arb}\\
+    w_{arb}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+    x_{clip}\\
+    y_{clip}\\
+    z_{clip}\\
+    w_{clip}
+    \end{bmatrix}
+  }$$
+  <p>OpenGL clips any <b>x_clip</b>, <b>y_clip</b>, or <b>z_clip</b> value that is outside the range [-<b>w_clip</b>, <b>w_clip</b>] to this range</p>
+  <p>OpenGL then divides the <b>x_clip</b>, <b>y_clip</b>, and <b>z_clip</b> by <b>w_clip</b> to transform from clip space to NDC space</p>
+  <p>If we cause the value of <b>z_arb</b> to be put into <b>w_clip</b> then in the transform from clip space to NDC space OpenGL will perform an effective divide by <b>z_arb</b> of our <b>x_clip</b>, <b>y_clip</b>, and <b>z_clip</b></p>
+  <p>We will then be in 3d OpenGL NDC space, which OpenGL uses to draw with</p>
+
+  <p>We know that</p>
+  $$x_{ndc} = {x_{clip} \over w_{clip}}$$
+  $$y_{ndc} = {y_{clip} \over w_{clip}}$$
+  $$z_{ndc} = {z_{clip} \over w_{clip}}$$
+
+  <p>or</p>
+  $${x_{clip} = x_{ndc} \cdot w_{clip} = x_{ndc} \cdot z_{arb}}$$
+  $${y_{clip} = y_{ndc} \cdot w_{clip} = y_{ndc} \cdot z_{arb}}$$
+  $${z_{clip} = z_{ndc} \cdot w_{clip} = z_{ndc} \cdot z_{arb}}$$
+
+  <p>So far, we have derived the mapping from Frustrum View Space to NDC Space for <b>x_arb</b> and <b>y_arb</b></p>
+  $${x_{ndc} = {\left({2n}\over {r - l}\right)} \cdot {x_{arb}\over z_{arb}} - {\left({{r + l}\over{r - l}}\right)} }$$
+  $${y_{ndc} = {\left({2n}\over {t - b}\right)} \cdot {y_{arb}\over z_{arb}} - {\left({{t + b}\over{t - b}}\right)} }$$
+
+  <p>We use these results to get the equations for <b>x_clip</b> and <b>y_clip</b></p>
+  $$x_{clip} = {x_{ndc}\cdot z_{arb} = {\left({2n}\over {r - l}\right)} \cdot x_{arb} - {\left({{r + l}\over{r - l}}\right)}\cdot z_{arb} }$$
+  $$y_{clip} = {y_{ndc}\cdot z_{arb} = {\left({2n}\over {t - b}\right)} \cdot y_{arb} - {\left({{t + b}\over{t - b}}\right)}\cdot z_{arb} }$$
+
+  <p>We can now fill in some of our projection matrix with what we have derived thus far</p>
+  $${
+    \begin{bmatrix}
+    {2n \over {r-l}} & 0 & -{\left(r+l \over r-l\right)} & 0\\
+    0 & {2n \over {t-b}} & -{\left(t+b \over t-b\right)} & 0\\
+    m_{02} & m_{12} & m_{22} & m_{32}\\
+    m_{03} & m_{13} & m_{23} & m_{33}
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+    x_{arb}\\
+    y_{arb}\\
+    z_{arb}\\
+    w_{arb}\\
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+    x_{clip}\\
+    y_{clip}\\
+    z_{clip}\\
+    w_{clip}
+    \end{bmatrix}
+  }$$
+
+  <p>We want <b>w_clip</b> = <b>z_arb</b>. We also always set <b>w_arb</b> = 1 for our input vertexes</p>
+  $${
+    \begin{bmatrix}
+    {2n \over {r-l}} & 0 & -{\left(r+l \over r-l\right)} & 0\\
+    0 & {2n \over {t-b}} & -{\left(t+b \over t-b\right)} & 0\\
+    m_{02} & m_{12} & m_{22} & m_{32}\\
+    0 & 0 & 1 & 0
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+    x_{arb}\\
+    y_{arb}\\
+    z_{arb}\\
+    1\\
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+    x_{clip}\\
+    y_{clip}\\
+    z_{clip}\\
+    w_{clip}
+    \end{bmatrix}
+  }$$
+
+  <h2>z Coordinate Mapping</h2>
+  <p>Now we need to derive an equation for <b>z_clip</b></p>
+  <p>We want <b>z_clip</b> to be a linear mapping from <b>z_arb</b></p>
+  <p>We do a linear mapping for <b>z_clip</b> using the slope intercept form of a line equation</p>
+  $${y = {p \cdot x} + q}$$
+  <p>For us, y=<b>z_clip</b> and x=<b>z_arb</b></p>
+  $${z_{clip} = {p \cdot z_{arb}} + q}$$
+  <p>We know that <b>z_clip</b> = <b>z_ndc</b>*<b>w_clip</b></p>
+  <p>So we have</p>
+  $${z_{clip} = z_{ndc} \cdot w_{clip}}$$
+  <p>We also know that we are causing <b>z_arb</b> to be put into <b>w_clip</b> so</p>
+  $${z_{clip} = z_{ndc} \cdot z_{arb} = {p \cdot z_{arb}} + q}$$
+  <p>We know that when <b>z_arb</b> = <b>n</b> that <b>z_ndc</b> = -1.0</p>
+  $${-1 \cdot n = {p \cdot n} + q}$$
+  $${-n - pn = q}$$
+  $${q = -n - pn}$$
+  <p>We know that when <b>z_arb</b> = <b>f</b> that <b>z_ndc</b> = +1.0</p>
+  $${+1 \cdot f = {p \cdot f} + q = pf + (-n - pn) = p\cdot (f - n) - n}$$
+  $${(f + n) = p\cdot (f - n)}$$
+  $${{{f + n}\over {f - n}} = p}$$
+  $${p = {{f + n}\over {f - n}}}$$
+  <p>Plugging p back into the q equation we find</p>
+  $${q = -n - pn = -n - \left({{f + n}\over {f - n}}\right) \cdot n = -n\cdot {{f - n}\over {f - n}} -n\cdot {{f + n}\over {f - n}}}$$
+  $${q = -n\cdot \left({{(f - n) + (f + n)}\over {f - n}}\right) = -n\cdot \left({2f \over {f - n}}\right)}$$
+  $${q = {-2fn \over {f - n}}}$$
+  <p>So plugging what we've found for p and q into our <b>z_clip</b> equation</p>
+  $${z_{clip} = {p \cdot z_{arb}} + q = {{f + n}\over {f - n}}\cdot z_{arb} + {-2fn \over {f - n}}}$$
+
+  <h2>Completed Projection Matrix</h2>
+  <p>Now we can fill out the rest of our projection matrix</p>
+  $${
+    \begin{bmatrix}
+    {2n \over (r-l)} & 0 & -{(r+l) \over (r-l)} & 0\\
+    0 & {2n \over (t-b)} & -{(t+b) \over (t-b)} & 0\\
+    0 & 0 & {{f + n}\over {f - n}} & {-2fn \over {f - n}}\\
+    0 & 0 & 1 & 0
+    \end{bmatrix}
+    \cdot
+    \begin{bmatrix}
+    x_{arb}\\
+    y_{arb}\\
+    z_{arb}\\
+    1\\
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+    x_{clip}\\
+    y_{clip}\\
+    z_{clip}\\
+    w_{clip}
+    \end{bmatrix}
+  }$$
+
+</body>
+</html>
